@@ -1,0 +1,38 @@
+# Web framework
+fastapi==0.115.6
+uvicorn[standard]>=0.32.0
+python-multipart==0.0.20
+
+# Validation / settings
+pydantic==2.10.4
+pydantic-settings==2.7.0
+
+# Database
+sqlalchemy==2.0.36
+alembic==1.14.0
+asyncpg==0.30.0
+psycopg2-binary==2.9.10
+pgvector==0.3.6
+
+# Background processing
+celery==5.4.0
+redis==6.2.0
+
+# AI / RAG
+openai==1.59.3
+langchain-text-splitters==0.3.4
+tiktoken==0.8.0
+
+# PDF processing & OCR
+PyMuPDF==1.25.1
+pytesseract>=0.3.13
+Pillow>=10.4.0
+
+# Utilities
+tenacity==9.0.0
+
+# Testing
+pytest==8.3.4
+pytest-asyncio==0.25.0
+httpx==0.28.1
+aiosqlite==0.20.0

@@ -1,0 +1,93 @@
+services:
+  api:
+    build: .
+    container_name: newspaper_rag_api
+    env_file: .env
+    environment:
+      UPLOAD_DIR: /app/storage/newspapers
+    ports:
+      - "8000:8000"
+    volumes:
+      - newspaper_storage:/app/storage/newspapers
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  worker:
+    build: .
+    container_name: newspaper_rag_worker
+    command: celery -A app.core.celery_app:celery_app worker --loglevel=INFO --concurrency=2 -Q documents
+    env_file: .env
+    environment:
+      UPLOAD_DIR: /app/storage/newspapers
+    volumes:
+      - newspaper_storage:/app/storage/newspapers
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A app.core.celery_app:celery_app inspect ping -d celery@$$HOSTNAME | grep -q pong"]
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 30s
+
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: newspaper_rag_db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-newspaper_rag}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-newspaper_rag}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  adminer:
+    image: adminer:latest
+    container_name: newspaper_rag_adminer
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: newspaper_rag_redis
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:
+  newspaper_storage:
+  redis_data:

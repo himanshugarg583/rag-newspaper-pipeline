@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Newspaper AI — Ask Your Newspapers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- ============ SIDEBAR ============ -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">📰</div>
+        <div>
+          <h1 class="brand-title">Newspaper&nbsp;AI</h1>
+          <p class="brand-sub">RAG-powered news Q&amp;A</p>
+        </div>
+      </div>
+
+      <!-- Upload zone -->
+      <div class="upload-zone" id="uploadZone">
+        <input type="file" id="fileInput" accept="application/pdf" multiple hidden />
+        <div class="upload-icon">⬆</div>
+        <p class="upload-text"><strong>Upload newspaper PDF</strong></p>
+        <p class="upload-hint">Drag &amp; drop or click to browse<br/>Digital &amp; Scanned PDFs (OCR Hindi + English) · max 50 MB</p>
+      </div>
+      <div id="uploadStatus"></div>
+
+      <!-- Document list -->
+      <div class="doc-section">
+        <div class="doc-header">
+          <h2>Newspapers</h2>
+          <button class="icon-btn" id="refreshDocs" title="Refresh list">⟳</button>
+        </div>
+        <ul class="doc-list" id="docList">
+          <li class="doc-empty">No newspapers uploaded yet</li>
+        </ul>
+      </div>
+
+      <div class="sidebar-footer">
+        <span class="status-dot" id="healthDot"></span>
+        <span id="healthText">Checking backend…</span>
+      </div>
+    </aside>
+
+    <!-- ============ MAIN CHAT ============ -->
+    <main class="chat-panel">
+      <header class="chat-header">
+        <div>
+          <h2>Ask across all newspapers</h2>
+          <p>Every question searches all processed Hindi &amp; English newspapers together</p>
+        </div>
+        <button class="btn-ghost" id="newChatBtn">＋ New chat</button>
+      </header>
+
+      <div class="chat-messages" id="chatMessages">
+        <div class="welcome">
+          <div class="welcome-icon">🗞️</div>
+          <h3>Welcome to Newspaper AI</h3>
+          <p>Upload English or Hindi newspaper PDFs on the left, wait for processing to complete, then ask anything in Hindi or English.</p>
+          <div class="suggestions">
+            <button class="chip" data-q="What are the latest developments in artificial intelligence?">Latest AI developments?</button>
+            <button class="chip" data-q="भारत की अर्थव्यवस्था के बारे में अखबारों में क्या बताया गया है?">भारत की अर्थव्यवस्था</button>
+            <button class="chip" data-q="Summarize the top business news.">Top business news</button>
+          </div>
+        </div>
+      </div>
+
+      <form class="chat-input-bar" id="chatForm">
+        <textarea id="questionInput" rows="1" placeholder="Ask a question about your newspapers…" required></textarea>
+        <button type="submit" class="send-btn" id="sendBtn" title="Send">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        </button>
+      </form>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
