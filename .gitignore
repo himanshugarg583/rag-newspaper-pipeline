@@ -1,6 +1,4 @@
 # Environment
-.env
-.env.local
 
 # Python
 __pycache__/
@@ -23,9 +21,10 @@ storage/newspapers/*
 
 # IDE
 .idea/
-.vscode/
 *.swp
 
 # OS
 .DS_Store
 Thumbs.db
+config.bat
+node_modules

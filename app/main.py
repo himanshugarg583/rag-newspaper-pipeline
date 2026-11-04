@@ -1,5 +1,6 @@
 """FastAPI application entrypoint."""
 
+import utils.session
 from contextlib import asynccontextmanager
 from pathlib import Path
 
