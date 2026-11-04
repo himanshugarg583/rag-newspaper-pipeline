@@ -25,9 +25,23 @@ class OCRService:
         self.dpi = dpi or settings.ocr_dpi
 
     def extract_text_from_page(self, page: fitz.Page) -> str:
-        """Render a PDF page to a pixmap image and run Tesseract OCR."""
+        """Render a PDF page to a pixmap image and run Tesseract OCR.
+        
+        Dynamically adjusts DPI based on physical page size so broadsheet newspapers
+        do not explode into 38MP images that take hours to process.
+        """
         try:
-            pix = page.get_pixmap(dpi=self.dpi)
+            rect = page.rect
+            max_pt = max(rect.width, rect.height)
+            if max_pt >= 1500:
+                effective_dpi = min(self.dpi, 100)
+            elif max_pt >= 1000:
+                effective_dpi = min(self.dpi, 120)
+            else:
+                effective_dpi = min(self.dpi, 150)
+
+            # Grayscale rendering avoids 3x RGB memory and speeds up binarization
+            pix = page.get_pixmap(dpi=effective_dpi, colorspace=fitz.csGRAY)
             img = Image.open(io.BytesIO(pix.tobytes("png")))
             text = pytesseract.image_to_string(img, lang=self.languages)
             return text.strip() if text else ""
@@ -41,14 +55,24 @@ class OCRService:
     def extract_text_from_document(
         self, document: fitz.Document
     ) -> list[tuple[int, str]]:
-        """Run OCR across all pages of a PDF document.
+        """Run OCR across all pages of a PDF document with progress tracking.
 
         Returns:
             List of (page_number, text) tuples.
         """
         results: list[tuple[int, str]] = []
+        total_pages = len(document)
         for page_number, page in enumerate(document, start=1):
+            logger.info("Running OCR on page %d/%d...", page_number, total_pages)
             page_text = self.extract_text_from_page(page)
             if page_text:
                 results.append((page_number, page_text))
+                logger.info(
+                    "OCR completed page %d/%d (%d chars)",
+                    page_number,
+                    total_pages,
+                    len(page_text),
+                )
+            else:
+                logger.warning("OCR extracted 0 chars on page %d/%d", page_number, total_pages)
         return results

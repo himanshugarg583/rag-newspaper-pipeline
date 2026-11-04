@@ -262,3 +262,44 @@ class TestCrossLanguageRetrievalAndQA:
         assert source["document_id"] == str(hindi_chunk.document_id)
         assert source["relevance_distance"] == 0.18
         assert "रेपो रेट" in source["excerpt"]
+
+    def test_determine_target_language(self):
+        """Test accurate detection of English, Devanagari Hindi, and Roman Hindi (Hinglish)."""
+        # Roman Hindi / Hinglish (Latin alphabet / abcd format)
+        assert LLMService.determine_target_language("kirodi lal meena ke bare me kuch news batao") == "Hinglish"
+        assert LLMService.determine_target_language("aaj ki taja khabar kya hai") == "Hinglish"
+        assert LLMService.determine_target_language("modi ji ke baare me batao") == "Hinglish"
+        assert LLMService.determine_target_language("jaipur me kya hua tha") == "Hinglish"
+        assert LLMService.determine_target_language("bhai kuch update batao") == "Hinglish"
+
+        # Hindi (Devanagari script)
+        assert LLMService.determine_target_language("किरोड़ी लाल मीणा के बारे में कुछ बताओ") == "Hindi"
+        assert LLMService.determine_target_language("जयपुर में क्या हुआ था?") == "Hindi"
+
+        # English
+        assert LLMService.determine_target_language("What is the latest news about Kirodi Lal Meena?") == "English"
+        assert LLMService.determine_target_language("Tell me about the incident in Jaipur") == "English"
+        assert LLMService.determine_target_language("Explain the economic growth projections") == "English"
+
+    def test_hinglish_question_generates_roman_hindi_instruction(self, hindi_chunk):
+        """Test that asking in Hinglish injects strict 26-letter Roman Hindi requirements."""
+        mock_openai = MagicMock()
+        mock_choice = MagicMock()
+        mock_choice.message.content = (
+            "Kirodi Lal Meena ke baare me newspaper me ye khabar aayi hai ki unhone hospital ka daura kiya."
+        )
+        mock_openai.chat.completions.create.return_value = MagicMock(choices=[mock_choice])
+
+        service = LLMService(client=mock_openai)
+        answer = service.generate_answer(
+            question="kirodi lal meena ke bare me kuch news batao",
+            chunks=[hindi_chunk],
+            history=[],
+        )
+
+        assert "Kirodi Lal Meena" in answer
+        call_args = mock_openai.chat.completions.create.call_args[1]
+        user_msg = call_args["messages"][-1]["content"]
+        assert "ROMAN HINDI / HINGLISH" in user_msg
+        assert "26 standard English alphabets" in user_msg
+

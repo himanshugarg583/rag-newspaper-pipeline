@@ -10,6 +10,7 @@ import uuid
 from datetime import datetime, timezone
 
 from celery import Task
+from celery.exceptions import SoftTimeLimitExceeded, TimeLimitExceeded
 from sqlalchemy import delete, select
 
 from app.core.celery_app import celery_app
@@ -174,7 +175,20 @@ def process_document(self: Task, document_id_str: str) -> dict:
         )
         raise self.retry(exc=exc)
 
+    except (SoftTimeLimitExceeded, TimeLimitExceeded) as exc:
+        logger.error("Processing timed out for document %s: %s", document_id, exc)
+        _mark_failed(
+            document_id,
+            "Processing timed out. The document contains too many complex scanned pages.",
+        )
+        return {"document_id": document_id_str, "status": "FAILED"}
+
     except Exception as exc:
         logger.exception("Unexpected error processing document %s", document_id)
         _mark_failed(document_id, f"Unexpected processing error: {exc}")
         return {"document_id": document_id_str, "status": "FAILED"}
+
+    except BaseException as exc:
+        logger.exception("Fatal worker interruption for document %s: %s", document_id, exc)
+        _mark_failed(document_id, f"Processing interrupted: {exc}")
+        raise

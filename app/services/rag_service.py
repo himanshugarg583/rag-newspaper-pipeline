@@ -25,6 +25,11 @@ NO_CONTEXT_ANSWER_HI = (
     "अपलोड किए गए समाचार पत्रों में इस प्रश्न का उत्तर देने के लिए प्रासंगिक जानकारी नहीं मिली। "
     "कृपया सुनिश्चित करें कि इस विषय से संबंधित समाचार पत्र अपलोड और प्रोसेस हो चुके हैं।"
 )
+
+NO_CONTEXT_ANSWER_HINGLISH = (
+    "Upload kiye gaye newspapers me is question ka answer dene ke liye relevant jankari nahi mili. "
+    "Kripya ensure karein ki is topic se related newspapers upload aur process ho chuke hain."
+)
 NO_CONTEXT_ANSWER = NO_CONTEXT_ANSWER_EN
 
 
@@ -80,8 +85,19 @@ class RAGService:
         chunks = await self.vector_search_service.search(search_query)
 
         if not chunks:
-            lang = LanguageService.detect_language(question)
-            fallback = NO_CONTEXT_ANSWER_HI if lang == "hi" else NO_CONTEXT_ANSWER_EN
+            try:
+                target_lang = self.llm_service.determine_target_language(question)
+                if not isinstance(target_lang, str):
+                    target_lang = LLMService.determine_target_language(question)
+            except Exception:
+                target_lang = LLMService.determine_target_language(question)
+
+            if target_lang == "Hindi":
+                fallback = NO_CONTEXT_ANSWER_HI
+            elif target_lang == "Hinglish":
+                fallback = NO_CONTEXT_ANSWER_HINGLISH
+            else:
+                fallback = NO_CONTEXT_ANSWER_EN
             return RAGResult(answer=fallback, chunks=[], sources=[])
 
         answer = await asyncio.to_thread(

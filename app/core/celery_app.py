@@ -23,7 +23,7 @@ celery_app.conf.update(
     result_expires=3600,
     broker_connection_retry_on_startup=True,
     task_default_queue="documents",
-    # Hard safety limits for long-running PDF processing tasks.
-    task_time_limit=60 * 30,
-    task_soft_time_limit=60 * 25,
+    # Hard safety limits for long-running PDF processing tasks (e.g. 30-50 page newspaper scans).
+    task_time_limit=60 * 60 * 2,
+    task_soft_time_limit=60 * 60 * 2 - 300,
 )
